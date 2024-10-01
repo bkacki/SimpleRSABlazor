@@ -21,14 +21,14 @@
     <button class="btn btn-success" @onclick="GenerateKeys">Generate New RSA Keys</button>
 </div>
 
-<!-- Pole do wprowadzenia klucza publicznego -->
+<!-- Input public key -->
 <div class="mb-3">
     <label for="publicKey">Public Key:</label>
     <textarea id="publicKey" class="form-control" @bind="InputPublicKey"></textarea>
     <button class="btn btn-info mt-2" @onclick="UpdatePublicKey">Use Public Key</button>
 </div>
 
-<!-- Pole do wprowadzenia klucza prywatnego -->
+<!-- Input private key -->
 <div class="mb-3">
     <label for="privateKey">Private Key:</label>
     <textarea id="privateKey" class="form-control" @bind="InputPrivateKey"></textarea>

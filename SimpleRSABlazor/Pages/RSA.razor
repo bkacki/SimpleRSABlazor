@@ -1,0 +1,138 @@
+﻿@page "/"
+@inject SimpleRSABlazor.Services.IRSAService RSAService
+
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+</head>
+
+<h3 class="header logo">Simple RSA</h3>
+
+<div class="mb-3">
+    <label for="message">Message to Encrypt:</label>
+    <textarea id="message" class="form-control" @bind="Message"></textarea>
+</div>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="EncryptMessage">Encrypt</button>
+    <button class="btn btn-secondary" @onclick="DecryptMessage">Decrypt</button>
+</div>
+
+<div class="mb-3">
+    <button class="btn btn-success" @onclick="GenerateKeys">Generate New RSA Keys</button>
+</div>
+
+<!-- Pole do wprowadzenia klucza publicznego -->
+<div class="mb-3">
+    <label for="publicKey">Public Key:</label>
+    <textarea id="publicKey" class="form-control" @bind="InputPublicKey"></textarea>
+    <button class="btn btn-info mt-2" @onclick="UpdatePublicKey">Use Public Key</button>
+</div>
+
+<!-- Pole do wprowadzenia klucza prywatnego -->
+<div class="mb-3">
+    <label for="privateKey">Private Key:</label>
+    <textarea id="privateKey" class="form-control" @bind="InputPrivateKey"></textarea>
+    <button class="btn btn-info mt-2" @onclick="UpdatePrivateKey">Use Private Key</button>
+</div>
+
+<!-- CSS -->
+<style>
+    .header {
+        text-align: center;
+        margin: 20px 0;
+    }
+
+    .logo {
+        font-family: 'Roboto', sans-serif;
+        font-size: 5em;
+        background: linear-gradient(90deg, #4B0082, #000080);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+</style>
+
+@if (!string.IsNullOrEmpty(EncryptedMessage))
+{
+    <div class="mb-3">
+        <label for="encryptedMessage">Encrypted Message:</label>
+        <textarea id="encryptedMessage" class="form-control" readonly>@EncryptedMessage</textarea>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(DecryptedMessage))
+{
+    <div class="mb-3">
+        <label for="decryptedMessage">Decrypted Message:</label>
+        <textarea id="decryptedMessage" class="form-control" readonly>@DecryptedMessage</textarea>
+    </div>
+}
+
+@if (RSAKey != null)
+{
+    <div class="mb-3">
+        <h4>RSA Keys:</h4>
+        <p><b>Public Key:</b> @RSAKey.PublicKey</p>
+        <p><b>Private Key:</b> @RSAKey.PrivateKey</p>
+    </div>
+}
+
+@code {
+    private string Message { get; set; }
+    private string EncryptedMessage { get; set; }
+    private string DecryptedMessage { get; set; }
+    private string InputPublicKey { get; set; }
+    private string InputPrivateKey { get; set; }
+    private SimpleRSA.RSAKey RSAKey { get; set; }
+
+    protected override void OnInitialized()
+    {
+        // Generate initial RSA keys on component load
+        RSAKey = RSAService.GenerateKeys();
+    }
+
+    private void GenerateKeys()
+    {
+        RSAKey = RSAService.GenerateKeys();
+        ClearMessages();
+    }
+
+    private void EncryptMessage()
+    {
+        if (!string.IsNullOrEmpty(Message))
+        {
+            EncryptedMessage = RSAService.EncryptMessage(RSAKey, Message);
+            DecryptedMessage = string.Empty; // Clear previous decrypted message
+        }
+    }
+
+    private void DecryptMessage()
+    {
+        if (!string.IsNullOrEmpty(Message))
+        {
+            DecryptedMessage = RSAService.DecryptMessage(RSAKey, Message);
+        }
+    }
+
+    private void UpdatePublicKey()
+    {
+        if (!string.IsNullOrEmpty(InputPublicKey))
+        {
+            RSAKey.PublicKey = InputPublicKey;
+        }
+    }
+
+    private void UpdatePrivateKey()
+    {
+        if (!string.IsNullOrEmpty(InputPrivateKey))
+        {
+            RSAKey.PrivateKey = InputPrivateKey;
+        }
+    }
+
+    private void ClearMessages()
+    {
+        Message = string.Empty;
+        EncryptedMessage = string.Empty;
+        DecryptedMessage = string.Empty;
+    }
+}

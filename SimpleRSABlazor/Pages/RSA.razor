@@ -1,80 +1,112 @@
 ﻿@page "/"
 @inject SimpleRSABlazor.Services.IRSAService RSAService
-
-<head>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
-</head>
+@inject SimpleRSABlazor.Services.RSAKeyStorageService KeyStorageService
 
 <h3 class="header logo">Simple RSA</h3>
 
-<div class="mb-3">
-    <label for="message">Message to Encrypt:</label>
-    <textarea id="message" class="form-control" @bind="Message"></textarea>
-</div>
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <h4>Message to Encrypt</h4>
+            <textarea id="message" class="form-control" @bind="Message" rows="3"></textarea>
+            <div class="mt-2">
+                <button class="btn btn-primary" @onclick="EncryptMessage">Encrypt</button>
+                <button class="btn btn-secondary" @onclick="DecryptMessage">Decrypt</button>
+            </div>
+        </div>
 
-<div class="mb-3">
-    <button class="btn btn-primary" @onclick="EncryptMessage">Encrypt</button>
-    <button class="btn btn-secondary" @onclick="DecryptMessage">Decrypt</button>
-</div>
-
-<div class="mb-3">
-    <button class="btn btn-success" @onclick="GenerateKeys">Generate New RSA Keys</button>
-</div>
-
-<!-- Input public key -->
-<div class="mb-3">
-    <label for="publicKey">Public Key:</label>
-    <textarea id="publicKey" class="form-control" @bind="InputPublicKey"></textarea>
-    <button class="btn btn-info mt-2" @onclick="UpdatePublicKey">Use Public Key</button>
-</div>
-
-<!-- Input private key -->
-<div class="mb-3">
-    <label for="privateKey">Private Key:</label>
-    <textarea id="privateKey" class="form-control" @bind="InputPrivateKey"></textarea>
-    <button class="btn btn-info mt-2" @onclick="UpdatePrivateKey">Use Private Key</button>
-</div>
-
-<!-- CSS -->
-<style>
-    .header {
-        text-align: center;
-        margin: 20px 0;
-    }
-
-    .logo {
-        font-family: 'Roboto', sans-serif;
-        font-size: 5em;
-        background: linear-gradient(90deg, #4B0082, #000080);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-</style>
-
-@if (!string.IsNullOrEmpty(EncryptedMessage))
-{
-    <div class="mb-3">
-        <label for="encryptedMessage">Encrypted Message:</label>
-        <textarea id="encryptedMessage" class="form-control" readonly>@EncryptedMessage</textarea>
+        <div class="col-md-6">
+            <h4>RSA Keys</h4>
+            <button class="btn btn-success" @onclick="GenerateKeys">Generate New RSA Keys</button>
+            <div class="mt-2">
+                <label for="publicKey">Public Key:</label>
+                <textarea id="publicKey" class="form-control" @bind="InputPublicKey" rows="1" readonly></textarea>
+                <button class="btn btn-info mt-2" @onclick="UpdatePublicKey">Use Public Key</button>
+            </div>
+            <div class="mt-2">
+                <label for="privateKey">Private Key:</label>
+                <textarea id="privateKey" class="form-control" @bind="InputPrivateKey" rows="1" readonly></textarea>
+                <button class="btn btn-info mt-2" @onclick="UpdatePrivateKey">Use Private Key</button>
+            </div>
+        </div>
     </div>
-}
 
-@if (!string.IsNullOrEmpty(DecryptedMessage))
-{
-    <div class="mb-3">
-        <label for="decryptedMessage">Decrypted Message:</label>
-        <textarea id="decryptedMessage" class="form-control" readonly>@DecryptedMessage</textarea>
-    </div>
-}
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <h4>Key Pair Management</h4>
+            <input placeholder="New Key Pair Name" @bind="NewKeyName" class="form-control" />
+            <button class="btn btn-warning mt-2" @onclick="SaveNewKeyPair">Save Key Pair</button>
 
-@if (RSAKey != null)
-{
-    <div class="mb-3">
-        <h4>RSA Keys:</h4>
-        <p><b>Public Key:</b> @RSAKey.PublicKey</p>
-        <p><b>Private Key:</b> @RSAKey.PrivateKey</p>
+            <select class="form-control mt-2" @bind="SelectedKeyName">
+                <option disabled selected value="">Select a saved key pair</option>
+                @foreach (var keyName in SavedKeyNames)
+                {
+                    <option>@keyName</option>
+                }
+            </select>
+
+            <div class="mt-2">
+                <button class="btn btn-primary" @onclick="LoadSelectedKey">Load Selected Key Pair</button>
+                <button class="btn btn-danger" @onclick="RemoveSelectedKey">Remove Selected Key Pair</button>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <h4>Single Key Storage</h4>
+            <div class="mt-2">
+                <input placeholder="Public Key Name" @bind="SinglePublicKeyName" class="form-control" />
+                <button class="btn btn-warning mt-2" @onclick="SaveSinglePublicKey">Save Public Key</button>
+                <select class="form-control mt-2" @bind="SelectedPublicKeyName">
+                    <option disabled selected value="">Select a saved public key</option>
+                    @foreach (var publicKeyName in SavedPublicKeyNames)
+                    {
+                        <option>@publicKeyName</option>
+                    }
+                </select>
+                <button class="btn btn-primary mt-2" @onclick="LoadSinglePublicKey">Load Public Key</button>
+            </div>
+            <div class="mt-2">
+                <input placeholder="Private Key Name" @bind="SinglePrivateKeyName" class="form-control" />
+                <button class="btn btn-warning mt-2" @onclick="SaveSinglePrivateKey">Save Private Key</button>
+                <select class="form-control mt-2" @bind="SelectedPrivateKeyName">
+                    <option disabled selected value="">Select a saved private key</option>
+                    @foreach (var privateKeyName in SavedPrivateKeyNames)
+                    {
+                        <option>@privateKeyName</option>
+                    }
+                </select>
+                <button class="btn btn-primary mt-2" @onclick="LoadSinglePrivateKey">Load Private Key</button>
+            </div>
+        </div>
     </div>
-}
+
+    <div class="row mt-4">
+        @if (!string.IsNullOrEmpty(EncryptedMessage))
+        {
+            <div class="col-md-6">
+                <h4>Encrypted Message</h4>
+                <textarea id="encryptedMessage" class="form-control" readonly>@EncryptedMessage</textarea>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(DecryptedMessage))
+        {
+            <div class="col-md-6">
+                <h4>Decrypted Message</h4>
+                <textarea id="decryptedMessage" class="form-control" readonly>@DecryptedMessage</textarea>
+            </div>
+        }
+
+        @if (RSAKey != null)
+        {
+            <div class="col-md-12 mt-4">
+                <h4>RSA Keys:</h4>
+                <p><strong>Public Key:</strong> @RSAKey.PublicKey</p>
+                <p><strong>Private Key:</strong> @RSAKey.PrivateKey</p>
+            </div>
+        }
+    </div>
+</div>
 
 @code {
     private string Message { get; set; }
@@ -82,18 +114,89 @@
     private string DecryptedMessage { get; set; }
     private string InputPublicKey { get; set; }
     private string InputPrivateKey { get; set; }
+    private string NewKeyName { get; set; }
+    private string SelectedKeyName { get; set; }
+    private string SinglePublicKeyName { get; set; }
+    private string SinglePrivateKeyName { get; set; }
+    private string SelectedPublicKeyName { get; set; }
+    private string SelectedPrivateKeyName { get; set; }
     private SimpleRSA.RSAKey RSAKey { get; set; }
+    private List<string> SavedKeyNames { get; set; } = new();
+    private List<string> SavedPublicKeyNames { get; set; } = new();
+    private List<string> SavedPrivateKeyNames { get; set; } = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // Generate initial RSA keys on component load
+        SavedKeyNames = await KeyStorageService.GetSavedKeyNamesAsync();
+        SavedPublicKeyNames = await KeyStorageService.GetSavedPublicKeyNamesAsync();
+        SavedPrivateKeyNames = await KeyStorageService.GetSavedPrivateKeyNamesAsync();
         RSAKey = RSAService.GenerateKeys();
     }
 
-    private void GenerateKeys()
+    private async Task SaveNewKeyPair()
     {
-        RSAKey = RSAService.GenerateKeys();
-        ClearMessages();
+        if (!string.IsNullOrEmpty(NewKeyName) && RSAKey != null)
+        {
+            await KeyStorageService.SaveKeyPairAsync(NewKeyName, RSAKey.PublicKey, RSAKey.PrivateKey);
+            SavedKeyNames.Add(NewKeyName);
+            await KeyStorageService.SaveKeyNamesAsync(SavedKeyNames, "keyNames");
+        }
+    }
+
+    private async Task SaveSinglePublicKey()
+    {
+        if (!string.IsNullOrEmpty(SinglePublicKeyName) && !string.IsNullOrEmpty(InputPublicKey))
+        {
+            await KeyStorageService.SavePublicKeyAsync(SinglePublicKeyName, InputPublicKey);
+            SavedPublicKeyNames.Add(SinglePublicKeyName);
+            await KeyStorageService.SaveKeyNamesAsync(SavedPublicKeyNames, "publicKeyNames");
+        }
+    }
+
+    private async Task SaveSinglePrivateKey()
+    {
+        if (!string.IsNullOrEmpty(SinglePrivateKeyName) && !string.IsNullOrEmpty(InputPrivateKey))
+        {
+            await KeyStorageService.SavePrivateKeyAsync(SinglePrivateKeyName, InputPrivateKey);
+            SavedPrivateKeyNames.Add(SinglePrivateKeyName);
+            await KeyStorageService.SaveKeyNamesAsync(SavedPrivateKeyNames, "privateKeyNames");
+        }
+    }
+
+    private async Task LoadSelectedKey()
+    {
+        if (!string.IsNullOrEmpty(SelectedKeyName))
+        {
+            InputPublicKey = await KeyStorageService.GetPublicKeyAsync(SelectedKeyName);
+            InputPrivateKey = await KeyStorageService.GetPrivateKeyAsync(SelectedKeyName);
+        }
+    }
+
+    private async Task RemoveSelectedKey()
+    {
+        if (!string.IsNullOrEmpty(SelectedKeyName))
+        {
+            await KeyStorageService.RemoveKeyPairAsync(SelectedKeyName);
+            SavedKeyNames.Remove(SelectedKeyName);
+            await KeyStorageService.SaveKeyNamesAsync(SavedKeyNames, "keyNames");
+            SelectedKeyName = null; // Reset selected key
+        }
+    }
+
+    private async Task LoadSinglePublicKey()
+    {
+        if (!string.IsNullOrEmpty(SelectedPublicKeyName))
+        {
+            InputPublicKey = await KeyStorageService.GetPublicKeyAsync(SelectedPublicKeyName);
+        }
+    }
+
+    private async Task LoadSinglePrivateKey()
+    {
+        if (!string.IsNullOrEmpty(SelectedPrivateKeyName))
+        {
+            InputPrivateKey = await KeyStorageService.GetPrivateKeyAsync(SelectedPrivateKeyName);
+        }
     }
 
     private void EncryptMessage()
@@ -109,8 +212,15 @@
     {
         if (!string.IsNullOrEmpty(Message))
         {
-            DecryptedMessage = RSAService.DecryptMessage(RSAKey, Message);
+            DecryptedMessage = RSAService.DecryptMessage(RSAKey, EncryptedMessage);
         }
+    }
+
+    private void GenerateKeys()
+    {
+        RSAKey = RSAService.GenerateKeys(); // Generate keys on button click
+        InputPublicKey = RSAKey.PublicKey;  // Bind the generated keys to the textareas
+        InputPrivateKey = RSAKey.PrivateKey;
     }
 
     private void UpdatePublicKey()
@@ -127,12 +237,5 @@
         {
             RSAKey.PrivateKey = InputPrivateKey;
         }
-    }
-
-    private void ClearMessages()
-    {
-        Message = string.Empty;
-        EncryptedMessage = string.Empty;
-        DecryptedMessage = string.Empty;
     }
 }
